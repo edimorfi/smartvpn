@@ -1,4 +1,0 @@
--keep class io.nekohasekai.libbox.** { *; }
--keep class libv2ray.** { *; }
--dontwarn io.nekohasekai.libbox.**
--dontwarn libv2ray.**
