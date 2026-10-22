@@ -1,0 +1,55 @@
+name: Build SmartDNS & WARP Stabilizer APK
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+    inputs:
+      bundle_v2ray_core:
+        description: 'دانلود و تزریق خودکار هسته Xray/v2ray (libv2ray.aar) در زمان بیلد'
+        required: false
+        default: 'true'
+
+jobs:
+  build-android-apk:
+    name: Compile Android APK (Debug & Release)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: دریافت سورس‌کد مخزن (Checkout)
+        uses: actions/checkout@v4
+
+      - name: نصب جاوا ۱۷ (Set up JDK 17)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: نصب Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: ساخت خودکار Gradle Wrapper (در صورت عدم وجود فایل باینری gradle-wrapper.jar)
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: دانلود خودکار هسته Xray-core (libv2ray.aar) و قرار دادن در app/libs
+        if: ${{ github.event.inputs.bundle_v2ray_core != 'false' }}
+        run: |
+          mkdir -p app/libs
+          curl -L -o app/libs/libv2ray.aar https://github.com/2dust/AndroidLibXrayLite/releases/latest/download/libv2ray.aar || true
+          ls -lh app/libs/
+
+      - name: کامپایل فایل نصبی اندروید (Assemble Debug & Release APK)
+        run: |
+          gradle assembleDebug assembleRelease --stacktrace
+
+      - name: آپلود خروجی APK (قابل دانلود از بخش Artifacts گیت‌هاب)
+        uses: actions/upload-artifact@v4
+        with:
+          name: SmartDnsStabilizer-APKs
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/release/*.apk
